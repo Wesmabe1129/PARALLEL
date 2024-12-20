@@ -1,0 +1,30 @@
+{
+    "trade_log": [
+        "Trader_A traded Copper with Trader_B for Copper",
+        "Trader_B traded Copper with Trader_A for Copper"
+    ],
+    "offers": {},
+    "type": "update_offers",
+    "traders": {
+        "Trader_A": [
+            "Gold",
+            "Silver",
+            "Bronze"
+        ],
+        "Trader_B": [
+            "Diamond",
+            "Platinum",
+            "Copper"
+        ],
+        "Trader_C": [
+            "Emerald",
+            "Ruby",
+            "Sapphire"
+        ],
+        "Trader_D": [
+            "Obsidian",
+            "Amethyst",
+            "Topaz"
+        ]
+    }
+}
