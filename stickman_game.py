@@ -153,7 +153,7 @@ def retract_punch(stickman, direction):
     # Define offsets for the guarding position relative to the body
     if direction == "left":
         upper_arm_offset = (0, 10, -20, 30)
-        forearm_offset = (-25, 30, -25, -10)
+        forearm_offset = (-20, 30, -20, -10)
     else:  # right
         upper_arm_offset = (0, 10, 20, 30)
         forearm_offset = (20, 30, 25, -10)
@@ -203,7 +203,7 @@ def game_loop():
     if "d" in keys_pressed:
         move_stickman(stickman1, 5, 0)
     if "j" in keys_pressed:
-        punch(stickman1, "left_arm", stickman2)
+        punch(stickman1, "left", stickman2)
     if "k" in keys_pressed:
         punch(stickman1, "right", stickman2)
 
