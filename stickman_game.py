@@ -81,19 +81,28 @@ def draw_stickman(canvas, position, color, mirror):
     If 'mirror' is True, draw a mirrored stickman for Player 2."""
     x, y = position
 
-
-    return {
+    stickman = {
         "head": canvas.create_oval((x, y, x + 30, y + 30), fill=color),
         "body": canvas.create_line((x + 15, y + 30, x + 15, y + 80), fill=color, width=3),
         # Left Arm with bend (mirrored if needed)
         "left_upper_arm": canvas.create_line((x + 15, y + 40, x + 35, y + 50), fill=color, width=3) if not mirror else canvas.create_line((x + 15, y + 40, x - 5, y + 50), fill=color, width=3),
-        "left_forearm": canvas.create_line((x + 35, y + 60, x + 35, y + 20), fill=color, width=3) if not mirror else canvas.create_line((x - 5, y + 60, x - 5, y + 20), fill=color, width=3),
+        "left_forearm": canvas.create_line((x + 35, y + 50, x + 35, y + 20), fill=color, width=3) if not mirror else canvas.create_line((x - 5, y + 50, x - 5, y + 20), fill=color, width=3),
         # Right Arm with bend (mirrored if needed)
         "right_upper_arm": canvas.create_line((x + 15, y + 40, x + 35, y + 60), fill=color, width=3) if not mirror else canvas.create_line((x + 15, y + 40, x - 5, y + 60), fill=color, width=3),
         "right_forearm": canvas.create_line((x + 35, y + 60, x + 40, y + 20), fill=color, width=3) if not mirror else canvas.create_line((x - 5, y + 60, x - 10, y + 20), fill=color, width=3),
-        "left_leg": canvas.create_line((x + 15, y + 80, x, y + 110), fill=color, width=3) if not mirror else canvas.create_line((x + 15, y + 80, x, y + 110), fill=color, width=3),
-        "right_leg": canvas.create_line((x + 15, y + 80, x + 30, y + 110), fill=color, width=3) if not mirror else canvas.create_line((x + 15, y + 80, x + 30, y + 110), fill=color, width=3)
+        "left_leg": canvas.create_line((x + 15, y + 80, x, y + 110), fill=color, width=3),
+        "right_leg": canvas.create_line((x + 15, y + 80, x + 30, y + 110), fill=color, width=3),
     }
+
+    # Save original arm coordinates
+    stickman["original_coords"] = {
+        "left_upper_arm": canvas.coords(stickman["left_upper_arm"]),
+        "left_forearm": canvas.coords(stickman["left_forearm"]),
+        "right_upper_arm": canvas.coords(stickman["right_upper_arm"]),
+        "right_forearm": canvas.coords(stickman["right_forearm"]),
+    }
+    return stickman
+
 
 
 
@@ -137,27 +146,39 @@ def retract_punch(stickman, direction):
     upper_arm_key = "left_upper_arm" if direction == "left" else "right_upper_arm"
     forearm_key = "left_forearm" if direction == "left" else "right_forearm"
     
-    upper_arm = stickman[upper_arm_key]
-    forearm = stickman[forearm_key]
+    # Get the current body position
+    body_coords = fight_canvas.coords(stickman["body"])
+    body_x, body_y = body_coords[0], body_coords[1]  # Top of the body
     
-    # Original V-shape coordinates
+    # Define offsets for the guarding position relative to the body
     if direction == "left":
-        fight_canvas.coords(upper_arm, fight_canvas.coords(upper_arm)[0], fight_canvas.coords(upper_arm)[1],
-                            fight_canvas.coords(upper_arm)[0] - 20, fight_canvas.coords(upper_arm)[1] + 10)
-        fight_canvas.coords(forearm, fight_canvas.coords(upper_arm)[2], fight_canvas.coords(upper_arm)[3],
-                            fight_canvas.coords(upper_arm)[2], fight_canvas.coords(upper_arm)[3] + 30)
-    else:
-        fight_canvas.coords(upper_arm, fight_canvas.coords(upper_arm)[0], fight_canvas.coords(upper_arm)[1],
-                            fight_canvas.coords(upper_arm)[0] + 20, fight_canvas.coords(upper_arm)[1] + 10)
-        fight_canvas.coords(forearm, fight_canvas.coords(upper_arm)[2], fight_canvas.coords(upper_arm)[3],
-                            fight_canvas.coords(upper_arm)[2], fight_canvas.coords(upper_arm)[3] + 30)
+        upper_arm_offset = (0, 10, -20, 30)
+        forearm_offset = (-25, 30, -25, -10)
+    else:  # right
+        upper_arm_offset = (0, 10, 20, 30)
+        forearm_offset = (20, 30, 25, -10)
+
+    # Calculate new positions for the upper arm and forearm
+    upper_arm_coords = [
+        body_x + upper_arm_offset[0], body_y + upper_arm_offset[1],
+        body_x + upper_arm_offset[2], body_y + upper_arm_offset[3]
+    ]
+    forearm_coords = [
+        body_x + forearm_offset[0], body_y + forearm_offset[1],
+        body_x + forearm_offset[2], body_y + forearm_offset[3]
+    ]
+    
+    # Reset the arm positions
+    fight_canvas.coords(stickman[upper_arm_key], *upper_arm_coords)
+    fight_canvas.coords(stickman[forearm_key], *forearm_coords)
+
 
 
 
 
 def check_collision(punching_stickman, opponent_stickman):
     """Check if the punching arm hits the opponent's head."""
-    punching_arm_coords = fight_canvas.bbox(punching_stickman["right_forearm"])  # Change to "left_arm" if needed
+    punching_arm_coords = fight_canvas.bbox(punching_stickman["left_forearm"])  # Change to "left_arm" if needed
     opponent_head_coords = fight_canvas.bbox(opponent_stickman["head"])
 
     if punching_arm_coords and opponent_head_coords:
