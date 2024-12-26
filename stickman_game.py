@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
 
+import threading
+
 # Global variables
 player1_pos = [110, 110]  # Starting position for Player 1
 player2_pos = [360, 110]  # Starting position for Player 2
@@ -52,29 +54,70 @@ def propose_fight():
         main_window.destroy()
         start_fight_mode()
 
-def start_fight_mode():
-    global fight_window, fight_canvas, stickman1, stickman2
-    fight_window = tk.Tk()
-    fight_window.title("Stickman Fight - Boxing Ring")
 
-    fight_canvas = tk.Canvas(fight_window, width=500, height=500, background="gray")
-    fight_canvas.pack()
+def create_window_player_1():
+    global window_player_1, window_player2, fight_canvas1, fight_canvas2, stickman1, stickman2
+    window_player_1 = tk.Tk()
+    window_player_1.title("Player 1 - Boxing Ring")
+
+    fight_canvas1 = tk.Canvas(window_player_1, width=500, height=500, background="gray")
+    fight_canvas1.pack()
 
     # Draw the boxing ring
-    fight_canvas.create_rectangle(50, 50, 450, 450, outline="white", width=5)
-    fight_canvas.create_rectangle(100, 100, 400, 400, outline="red", width=2)
+    fight_canvas1.create_rectangle(50, 50, 450, 450, outline="white", width=5)
+    fight_canvas1.create_rectangle(100, 100, 400, 400, outline="red", width=2)
 
     # Draw Stickman 1 and 2
-    stickman1 = draw_stickman(fight_canvas, player1_pos, "yellow", mirror=False)
-    stickman2 = draw_stickman(fight_canvas, player2_pos, "blue", mirror=True)
+    stickman1 = draw_stickman(fight_canvas1, player1_pos, "yellow", mirror=False)
+    stickman2 = draw_stickman(fight_canvas1, player2_pos, "blue", mirror=True)
 
-    fight_window.bind("<KeyPress>", key_press)
-    fight_window.bind("<KeyRelease>", key_release)
+    window_player_1.bind("<KeyPress>", key_press)
+    window_player_1.bind("<KeyRelease>", key_release)
 
     # Start the game loop
     game_loop()
 
-    fight_window.mainloop()
+    window_player_1.mainloop()
+
+
+def create_window_player_2():
+    global window_player_1, window_player2, fight_canvas1, fight_canvas2, stickman1, stickman2
+
+    window_player_2 = tk.Tk()
+    window_player_2.title("Player 2 - Boxing Ring")
+
+    fight_canvas2 = tk.Canvas(window_player_2, width=500, height=500, background="gray")
+    fight_canvas2.pack()
+
+    # Draw the boxing ring
+    fight_canvas2.create_rectangle(50, 50, 450, 450, outline="white", width=5)
+    fight_canvas2.create_rectangle(100, 100, 400, 400, outline="red", width=2)
+
+    # Draw Stickman 1 and 2
+    stickman1 = draw_stickman(fight_canvas2, player1_pos, "yellow", mirror=False)
+    stickman2 = draw_stickman(fight_canvas2, player2_pos, "blue", mirror=True)
+
+    window_player_2.bind("<KeyPress>", key_press)
+    window_player_2.bind("<KeyRelease>", key_release)
+
+    # Start the game loop
+    game_loop()
+
+    window_player_2.mainloop()
+
+
+
+
+def start_fight_mode():
+    thread1 = threading.Thread(target=create_window_player_1)
+    thread2 = threading.Thread(target=create_window_player_2)
+
+    thread1.start()
+    thread2.start()
+    
+
+
+    
 
 def draw_stickman(canvas, position, color, mirror):
     """Draw a stickman with a bendable arm forming a 'V' shape for punching. 
@@ -112,7 +155,8 @@ def draw_stickman(canvas, position, color, mirror):
 def move_stickman(stickman, dx, dy):
     """Move all parts of the stickman by (dx, dy)."""
     for part in stickman.values():
-        fight_canvas.move(part, dx, dy)
+        fight_canvas1.move(part, dx, dy)
+        fight_canvas2.move(part, dx, dy)
 
 def punch(stickman, direction, opponent):
     """Perform a punch animation and check for collision."""
@@ -126,20 +170,31 @@ def punch(stickman, direction, opponent):
     dy = 0  # Keep it at the same vertical level
     
     # Straighten the upper arm
-    fight_canvas.coords(upper_arm, 
-        fight_canvas.coords(upper_arm)[0], fight_canvas.coords(upper_arm)[1], 
-        fight_canvas.coords(upper_arm)[0] + dx, fight_canvas.coords(upper_arm)[1] + dy
+    fight_canvas1.coords(upper_arm, 
+        fight_canvas1.coords(upper_arm)[0], fight_canvas1.coords(upper_arm)[1], 
+        fight_canvas1.coords(upper_arm)[0] + dx, fight_canvas1.coords(upper_arm)[1] + dy
+    )
+    fight_canvas2.coords(upper_arm, 
+        fight_canvas2.coords(upper_arm)[0], fight_canvas2.coords(upper_arm)[1], 
+        fight_canvas2.coords(upper_arm)[0] + dx, fight_canvas2.coords(upper_arm)[1] + dy
     )
     
     # Straighten the forearm to align with the upper arm
-    fight_canvas.coords(forearm, 
-        fight_canvas.coords(upper_arm)[2], fight_canvas.coords(upper_arm)[3], 
-        fight_canvas.coords(upper_arm)[2] + dx, fight_canvas.coords(upper_arm)[3] + dy
+    fight_canvas1.coords(forearm, 
+        fight_canvas1.coords(upper_arm)[2], fight_canvas1.coords(upper_arm)[3], 
+        fight_canvas1.coords(upper_arm)[2] + dx, fight_canvas1.coords(upper_arm)[3] + dy
+    )
+    fight_canvas2.coords(forearm, 
+        fight_canvas2.coords(upper_arm)[2], fight_canvas2.coords(upper_arm)[3], 
+        fight_canvas2.coords(upper_arm)[2] + dx, fight_canvas2.coords(upper_arm)[3] + dy
     )
     
     # Check collision
-    fight_window.after(100, lambda: check_collision(stickman, opponent))
-    fight_window.after(200, lambda: retract_punch(stickman, direction))
+    fight_canvas1.after(100, lambda: check_collision(stickman, opponent))
+    fight_canvas1.after(200, lambda: retract_punch(stickman, direction))
+
+    fight_canvas2.after(100, lambda: check_collision(stickman, opponent))
+    fight_canvas2.after(200, lambda: retract_punch(stickman, direction))
 
 def retract_punch(stickman, direction):
     """Retract the arm back to its original V-shaped guarding position."""
@@ -147,7 +202,7 @@ def retract_punch(stickman, direction):
     forearm_key = "left_forearm" if direction == "left" else "right_forearm"
     
     # Get the current body position
-    body_coords = fight_canvas.coords(stickman["body"])
+    body_coords = fight_canvas1.coords(stickman["body"])
     body_x, body_y = body_coords[0], body_coords[1]  # Top of the body
     
     # Define offsets for the guarding position relative to the body
@@ -169,8 +224,11 @@ def retract_punch(stickman, direction):
     ]
     
     # Reset the arm positions
-    fight_canvas.coords(stickman[upper_arm_key], *upper_arm_coords)
-    fight_canvas.coords(stickman[forearm_key], *forearm_coords)
+    fight_canvas1.coords(stickman[upper_arm_key], *upper_arm_coords)
+    fight_canvas1.coords(stickman[forearm_key], *forearm_coords)
+
+    fight_canvas2.coords(stickman[upper_arm_key], *upper_arm_coords)
+    fight_canvas2.coords(stickman[forearm_key], *forearm_coords)
 
 
 
@@ -178,8 +236,8 @@ def retract_punch(stickman, direction):
 
 def check_collision(punching_stickman, opponent_stickman):
     """Check if the punching arm hits the opponent's head."""
-    punching_arm_coords = fight_canvas.bbox(punching_stickman["left_forearm"])  # Change to "left_arm" if needed
-    opponent_head_coords = fight_canvas.bbox(opponent_stickman["head"])
+    punching_arm_coords = fight_canvas1.bbox(punching_stickman["left_forearm"])  # Change to "left_arm" if needed
+    opponent_head_coords = fight_canvas1.bbox(opponent_stickman["head"])
 
     if punching_arm_coords and opponent_head_coords:
         overlap = (
@@ -222,7 +280,8 @@ def game_loop():
         punch(stickman2, "right", stickman1)
 
     # Schedule the game loop to run again
-    fight_window.after(16, game_loop)  # 16ms for ~60fps
+    fight_canvas1.after(16, game_loop)  # 16ms for ~60fps
+    # fight_canvas2.after(16, game_loop)  # 16ms for ~60fps
 
 def key_press(event):
     """Add key to pressed set."""
@@ -232,9 +291,12 @@ def key_release(event):
     """Remove key from pressed set."""
     keys_pressed.discard(event.keysym)
 
+
+
+
 # Create the windows
 main_window = create_main_window()
-secondary_window = create_secondary_window()
+# secondary_window = create_secondary_window()
 
 # Run the application
 main_window.mainloop()
