@@ -158,7 +158,7 @@ def move_stickman(stickman, dx, dy):
         fight_canvas1.move(part, dx, dy)
         fight_canvas2.move(part, dx, dy)
 
-def punch(stickman, direction, opponent):
+def punch(stickman, direction, opponent, canvas):
     """Perform a punch animation and check for collision."""
     upper_arm_key = "left_upper_arm" if direction == "left" else "right_upper_arm"
     forearm_key = "left_forearm" if direction == "left" else "right_forearm"
@@ -170,39 +170,28 @@ def punch(stickman, direction, opponent):
     dy = 0  # Keep it at the same vertical level
     
     # Straighten the upper arm
-    fight_canvas1.coords(upper_arm, 
-        fight_canvas1.coords(upper_arm)[0], fight_canvas1.coords(upper_arm)[1], 
-        fight_canvas1.coords(upper_arm)[0] + dx, fight_canvas1.coords(upper_arm)[1] + dy
-    )
-    fight_canvas2.coords(upper_arm, 
-        fight_canvas2.coords(upper_arm)[0], fight_canvas2.coords(upper_arm)[1], 
-        fight_canvas2.coords(upper_arm)[0] + dx, fight_canvas2.coords(upper_arm)[1] + dy
+    canvas.coords(upper_arm, 
+        canvas.coords(upper_arm)[0], canvas.coords(upper_arm)[1], 
+        canvas.coords(upper_arm)[0] + dx, canvas.coords(upper_arm)[1] + dy
     )
     
     # Straighten the forearm to align with the upper arm
-    fight_canvas1.coords(forearm, 
-        fight_canvas1.coords(upper_arm)[2], fight_canvas1.coords(upper_arm)[3], 
-        fight_canvas1.coords(upper_arm)[2] + dx, fight_canvas1.coords(upper_arm)[3] + dy
-    )
-    fight_canvas2.coords(forearm, 
-        fight_canvas2.coords(upper_arm)[2], fight_canvas2.coords(upper_arm)[3], 
-        fight_canvas2.coords(upper_arm)[2] + dx, fight_canvas2.coords(upper_arm)[3] + dy
+    canvas.coords(forearm, 
+        canvas.coords(upper_arm)[2], canvas.coords(upper_arm)[3], 
+        canvas.coords(upper_arm)[2] + dx, canvas.coords(upper_arm)[3] + dy
     )
     
     # Check collision
-    fight_canvas1.after(100, lambda: check_collision(stickman, opponent))
-    fight_canvas1.after(200, lambda: retract_punch(stickman, direction))
+    canvas.after(100, lambda: check_collision(stickman, opponent, canvas))
+    canvas.after(200, lambda: retract_punch(stickman, direction, canvas))
 
-    fight_canvas2.after(100, lambda: check_collision(stickman, opponent))
-    fight_canvas2.after(200, lambda: retract_punch(stickman, direction))
-
-def retract_punch(stickman, direction):
+def retract_punch(stickman, direction, canvas):
     """Retract the arm back to its original V-shaped guarding position."""
     upper_arm_key = "left_upper_arm" if direction == "left" else "right_upper_arm"
     forearm_key = "left_forearm" if direction == "left" else "right_forearm"
     
     # Get the current body position
-    body_coords = fight_canvas1.coords(stickman["body"])
+    body_coords = canvas.coords(stickman["body"])
     body_x, body_y = body_coords[0], body_coords[1]  # Top of the body
     
     # Define offsets for the guarding position relative to the body
@@ -224,20 +213,18 @@ def retract_punch(stickman, direction):
     ]
     
     # Reset the arm positions
-    fight_canvas1.coords(stickman[upper_arm_key], *upper_arm_coords)
-    fight_canvas1.coords(stickman[forearm_key], *forearm_coords)
-
-    fight_canvas2.coords(stickman[upper_arm_key], *upper_arm_coords)
-    fight_canvas2.coords(stickman[forearm_key], *forearm_coords)
+    canvas.coords(stickman[upper_arm_key], *upper_arm_coords)
+    canvas.coords(stickman[forearm_key], *forearm_coords)
 
 
 
 
 
-def check_collision(punching_stickman, opponent_stickman):
+
+def check_collision(punching_stickman, opponent_stickman, canvas):
     """Check if the punching arm hits the opponent's head."""
-    punching_arm_coords = fight_canvas1.bbox(punching_stickman["left_forearm"])  # Change to "left_arm" if needed
-    opponent_head_coords = fight_canvas1.bbox(opponent_stickman["head"])
+    punching_arm_coords = canvas.bbox(punching_stickman["left_forearm"])  # Change to "left_arm" if needed
+    opponent_head_coords = canvas.bbox(opponent_stickman["head"])
 
     if punching_arm_coords and opponent_head_coords:
         overlap = (
@@ -248,6 +235,7 @@ def check_collision(punching_stickman, opponent_stickman):
         )
         if overlap:
             print("Punch landed!")  # For debugging or triggering events
+
 
 def game_loop():
     """Continuous game loop to process held keys."""
@@ -261,9 +249,11 @@ def game_loop():
     if "d" in keys_pressed:
         move_stickman(stickman1, 5, 0)
     if "j" in keys_pressed:
-        punch(stickman1, "left", stickman2)
+        punch(stickman1, "left", stickman2, canvas=fight_canvas1)
+        punch(stickman1, "left", stickman2, canvas=fight_canvas2)
     if "k" in keys_pressed:
-        punch(stickman1, "right", stickman2)
+        punch(stickman1, "right", stickman2, canvas=fight_canvas1)
+        punch(stickman1, "right", stickman2, canvas=fight_canvas2)
 
     # Stickman 2 controls
     if "Up" in keys_pressed:
@@ -275,13 +265,17 @@ def game_loop():
     if "Right" in keys_pressed:
         move_stickman(stickman2, 5, 0)
     if "4" in keys_pressed:
-        punch(stickman2, "left", stickman1)
+        punch(stickman2, "left", stickman1, canvas=fight_canvas1)
+        punch(stickman2, "left", stickman1, canvas=fight_canvas2)
     if "5" in keys_pressed:
-        punch(stickman2, "right", stickman1)
+        punch(stickman2, "right", stickman1, canvas=fight_canvas1)
+        punch(stickman2, "right", stickman1, canvas=fight_canvas2)
 
     # Schedule the game loop to run again
     fight_canvas1.after(16, game_loop)  # 16ms for ~60fps
     # fight_canvas2.after(16, game_loop)  # 16ms for ~60fps
+
+
 
 def key_press(event):
     """Add key to pressed set."""
